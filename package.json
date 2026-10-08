@@ -1,0 +1,12 @@
+{
+  "name": "medarzt-multiplayer-server",
+  "version": "1.0.0",
+  "description": "MEDARZT 26 Solidus Gambit Multiplayer Server",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.3"
+  }
+}
