@@ -5658,8 +5658,7 @@ function renderParticipantFinal() {
                       <td>
 
                         ${money(
-                          team.round2CorrectAnswers ||
-                          0
+                          team.correctAnswers || 0
                         )}
 
                       </td>
@@ -5668,8 +5667,7 @@ function renderParticipantFinal() {
                       <td>
 
                         ${money(
-                          team.round2WrongAnswers ||
-                          0
+                          team.wrongAnswers || 0
                         )}
 
                       </td>
@@ -5958,8 +5956,7 @@ function renderFinalHost() {
                       <td>
 
                         ${money(
-                          team.round2CorrectAnswers ||
-                          0
+                          team.correctAnswers || 0
                         )}
 
                       </td>
@@ -5968,8 +5965,7 @@ function renderFinalHost() {
                       <td>
 
                         ${money(
-                          team.round2WrongAnswers ||
-                          0
+                          team.wrongAnswers || 0
                         )}
 
                       </td>
