@@ -7,7 +7,9 @@ const HOST_PASSWORD = "admin123";
 const WS_PORT = 3000;
 
 const WS_URL =
-  `ws://${location.hostname || "127.0.0.1"}:${WS_PORT}`;
+  location.protocol === "https:"
+    ? "wss://solidus-gambit-cryptoquest.onrender.com"
+    : `ws://${location.hostname || "127.0.0.1"}:${WS_PORT}`;
 
 let socket = null;
 
