@@ -11,7 +11,7 @@ const WebSocket = require("ws");
 const PORT = 3000;
 const HOST_PASSWORD = "admin123";
 
-const ROOT = path.resolve(__dirname, "..");
+const ROOT = __dirname;
 
 /* =========================================================
    STATE
