@@ -5198,12 +5198,18 @@ function updateParticipant() {
     );
 
 
-    show(
+    hide(
       $("participantFinal")
     );
 
+    show(
+      $("participantQuestionArea")
+    );
 
-    renderParticipantFinal();
+    setText(
+      "participantQuestion",
+      "Game completed. Please check the host screen for final results."
+    );
 
     return;
 
