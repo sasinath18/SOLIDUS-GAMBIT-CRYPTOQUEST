@@ -1780,380 +1780,87 @@ function renderRound1Bids() {
    ========================================================= */
 
 function renderRound1Selection() {
-
-  const pane =
-    $("round1QualificationPane");
-
-  if (!pane) {
-
-    return;
-
-  }
-
-
-  if (
-    !gameState.round1Ended ||
-    gameState.round !== 1
-  ) {
-
+  const pane = $("round1QualificationPane");
+  if (pane) {
     pane.innerHTML = "";
-
     hide(pane);
-
-    return;
-
   }
-
-
-  show(pane);
-
-
-  const list =
-
-    Object.values(
-      teams
-    ).sort(
-
-      (a, b) =>
-        money(b.points) -
-        money(a.points) ||
-
-        String(a.name).localeCompare(
-          String(b.name)
-        )
-
-    );
-
-
-  const selectedFromState =
-
-    new Set(
-
-      Array.isArray(
-        gameState.qualifiedTeamIds
-      )
-
-        ? gameState.qualifiedTeamIds
-
-        : []
-
-    );
-
-
-  pane.innerHTML = `
-
-    <div class="panel">
-
-      <h3>
-
-        ROUND 1 FINAL — SELECT TEAMS FOR ROUND 2
-
-      </h3>
-
-
-      <p class="note">
-
-        Host manually selects the teams.
-
-        Every selected team automatically receives
-
-        <strong>+100 points</strong>.
-
-      </p>
-
-
-      <div
-
-        style="
-
-          display:grid;
-
-          gap:8px;
-
-          max-height:560px;
-
-          overflow:auto
-
-        "
-
-      >
-
-        ${
-          list.length
-
-            ? list
-                .map(
-
-                  (team, index) => `
-
-                    <label
-
-                      style="
-
-                        display:grid;
-
-                        grid-template-columns:
-
-                          28px
-
-                          42px
-
-                          1fr
-
-                          100px
-
-                          80px
-
-                          80px
-
-                          90px;
-
-                        gap:8px;
-
-                        align-items:center;
-
-                        border:1px solid #292929;
-
-                        border-radius:9px;
-
-                        padding:10px;
-
-                        cursor:pointer
-
-                      "
-
-                    >
-
-                      <input
-
-                        type="checkbox"
-
-                        class="qualify-check"
-
-                        value="${esc(
-                          team.id
-                        )}"
-
-                        ${
-                          selectedFromState.has(
-                            team.id
-                          )
-                            ? "checked"
-                            : ""
-                        }
-
-                      >
-
-
-                      <span>
-
-                        #${index + 1}
-
-                      </span>
-
-
-                      <strong>
-
-                        ${esc(
-                          team.name
-                        )}
-
-                      </strong>
-
-
-                      <span>
-
-                        ${money(
-                          team.points
-                        )}
-
-                        pts
-
-                      </span>
-
-
-                      <span>
-
-                        ✓
-
-                        ${money(
-                          team.correctAnswers
-                        )}
-
-                      </span>
-
-
-                      <span>
-
-                        ✕
-
-                        ${money(
-                          team.wrongAnswers
-                        )}
-
-                      </span>
-
-
-                      <span>
-
-                        Won
-
-                        ${money(
-                          team.itemsWon
-                        )}
-
-                      </span>
-
-                    </label>
-
-                  `
-
-                )
-
-                .join("")
-
-            : `
-
-                <p class="note">
-
-                  No teams available.
-
-                </p>
-
-              `
-        }
-
-      </div>
-
-
-      <div
-
-        class="toolbar"
-
-        style="margin-top:12px"
-
-      >
-
-        <button
-
-          id="confirmManualQualification"
-
-          class="btn gold"
-
-        >
-
-          MOVE SELECTED TO ROUND 2
-
-        </button>
-
-
-        <span
-
-          id="selectedCount"
-
-          class="note"
-
-        ></span>
-
-      </div>
-
-    </div>
-
-  `;
-
-
-  const updateCount = () => {
-
-    const count =
-
-      pane.querySelectorAll(
-        ".qualify-check:checked"
-      ).length;
-
-
-    setText(
-
-      "selectedCount",
-
-      `${count} team(s) selected · +100 each`
-
-    );
-
-  };
-
-
-  pane
-    .querySelectorAll(
-      ".qualify-check"
-    )
-    .forEach(
-
-      input => {
-
-        input.addEventListener(
-
-          "change",
-
-          updateCount
-
-        );
-
-      }
-
-    );
-
-
-  updateCount();
-
-
-  $("confirmManualQualification")
-    ?.addEventListener(
-
-      "click",
-
-      () => {
-
-        const ids = [
-
-          ...pane.querySelectorAll(
-            ".qualify-check:checked"
-          )
-
-        ].map(
-
-          input =>
-            input.value
-
-        );
-
-
-        if (!ids.length) {
-
-          showNotice(
-            "Select at least one team."
-          );
-
-          return;
-
-        }
-
-
-        send({
-
-          type:
-            "qualify-round2",
-
-          selectedTeamIds:
-            ids
-
-        });
-
-      }
-
-    );
-
 }
 
+/* =========================================================
+   HOST TEAM WAITING LIST AND ROUND ASSIGNMENT
+   ========================================================= */
+function renderHostTeamAssignments() {
+  if (role !== "host") return;
+  const overview = $("hostOverviewPanel");
+  if (!overview) return;
+
+  let panel = $("hostTeamAssignmentPanel");
+  if (!panel) {
+    panel = document.createElement("div");
+    panel.id = "hostTeamAssignmentPanel";
+    panel.className = "panel";
+    panel.style.marginTop = "16px";
+    overview.appendChild(panel);
+  }
+
+  const list = Object.values(teams).sort((a, b) =>
+    String(a.name).localeCompare(String(b.name))
+  );
+  const roundLabel = team =>
+    team.assignedRound === 1 ? "ROUND 1" :
+    team.assignedRound === 2 ? "ROUND 2" : "WAITING";
+
+  panel.innerHTML = `
+    <h3>TEAM WAITING LIST & ROUND ASSIGNMENT</h3>
+    <p class="note">Select teams, then assign Round 1 (100 starting points) or Round 2 (manual points). Teams cannot bid until the host assigns them.</p>
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Select</th><th>Team</th><th>Connection</th><th>Assigned Round</th><th>Current Points</th><th>Round 2 Points</th></tr></thead>
+        <tbody>${list.length ? list.map(team => `
+          <tr>
+            <td><input type="checkbox" class="host-assign-team" value="${esc(team.id)}"></td>
+            <td>${esc(team.name)}</td>
+            <td>${team.connected ? "ONLINE" : "OFFLINE"}</td>
+            <td>${roundLabel(team)}</td>
+            <td>${money(team.points)}</td>
+            <td><input class="mp-input host-round2-points" data-team-id="${esc(team.id)}" type="number" min="0" max="1000000" step="1" value="${money(team.points)}" style="min-width:100px"></td>
+          </tr>`).join("") : `<tr><td colspan="6">No teams have logged in yet.</td></tr>`}
+        </tbody>
+      </table>
+    </div>
+    <div class="toolbar" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:12px">
+      <button id="assignSelectedRound1" class="mp-btn" type="button">ASSIGN SELECTED TO ROUND 1 (100 PTS)</button>
+      <button id="assignSelectedRound2" class="mp-btn mp-btn-gold" type="button">ASSIGN SELECTED TO ROUND 2</button>
+    </div>
+  `;
+
+  const selectedIds = () => [...panel.querySelectorAll(".host-assign-team:checked")].map(el => el.value);
+
+  $("assignSelectedRound1")?.addEventListener("click", () => {
+    const ids = selectedIds();
+    if (!ids.length) return showNotice("Select at least one team.");
+    send({ type: "assign-teams-round1", selectedTeamIds: ids });
+    showNotice("Selected teams assigned to Round 1 with 100 points each.");
+  });
+
+  $("assignSelectedRound2")?.addEventListener("click", () => {
+    const ids = selectedIds();
+    if (!ids.length) return showNotice("Select at least one team.");
+    if (gameState.round !== 1 || !gameState.round1Ended) {
+      return showNotice("End Round 1 before assigning teams to Round 2.");
+    }
+    const assignments = ids.map(id => {
+      const input = [...panel.querySelectorAll(".host-round2-points")].find(el => el.dataset.teamId === id);
+      return { teamId: id, points: input ? input.value : "" };
+    });
+    if (assignments.some(item => item.points === "" || !Number.isSafeInteger(Number(item.points)) || Number(item.points) < 0)) {
+      return showNotice("Enter valid starting points for every selected team.");
+    }
+    send({ type: "assign-teams-round2", assignments });
+    showNotice("Round 2 teams and points sent to the server.");
+  });
+}
 
 /* =========================================================
    ROUND 1 FINAL SUMMARY
@@ -4816,15 +4523,41 @@ function updateOverview() {
 
 function updateParticipant() {
 
-  const me =
+  const me = teams[teamId];
+  if (!me) return;
 
-    teams[teamId];
-
-
-  if (!me) {
-
+  if (me.assignedRound !== 1 && me.assignedRound !== 2) {
+    hide($("participantQuestionArea"));
+    hide($("participantImageArea"));
+    hide($("participantFinal"));
+    hide($("biddingArea"));
+    show($("participantQuestionArea"));
+    setText("participantQuestion", "Waiting for the host to assign your team to a round.");
+    setText("participantQualification", "WAITING FOR HOST");
+    setText("participantPoints", money(me.points));
     return;
+  }
 
+  if (me.assignedRound === 2 && gameState.round !== 2 && gameState.round !== 3) {
+    hide($("participantImageArea"));
+    hide($("participantFinal"));
+    hide($("biddingArea"));
+    show($("participantQuestionArea"));
+    setText("participantQuestion", "Round 2 assigned. Waiting for the host to start Round 2.");
+    setText("participantQualification", "ROUND 2 ASSIGNED");
+    setText("participantPoints", money(me.points));
+    return;
+  }
+
+  if (me.assignedRound === 1 && gameState.round === 2 && !me.qualified) {
+    hide($("participantImageArea"));
+    hide($("participantFinal"));
+    hide($("biddingArea"));
+    show($("participantQuestionArea"));
+    setText("participantQuestion", "Your team is not assigned to Round 2.");
+    setText("participantQualification", "ROUND 1 TEAM");
+    setText("participantPoints", money(me.points));
+    return;
   }
 
 
@@ -6535,6 +6268,8 @@ function updateEverything() {
     renderRound1Bids();
 
     renderRound1Selection();
+
+    renderHostTeamAssignments();
 
     renderRound1Summary();
 
