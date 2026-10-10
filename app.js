@@ -1374,7 +1374,9 @@ function renderRound1Bids() {
   }
 
 
-  if (!allTeams.length) {
+  const round1Teams = allTeams.filter(team => team.assignedRound === 1);
+
+  if (!round1Teams.length) {
 
     board.innerHTML =
 
@@ -1452,7 +1454,7 @@ function renderRound1Bids() {
 
       ${
 
-        allTeams
+        round1Teams
 
           .map(
 
@@ -1847,7 +1849,7 @@ function renderHostTeamAssignments() {
   $("assignSelectedRound2")?.addEventListener("click", () => {
     const ids = selectedIds();
     if (!ids.length) return showNotice("Select at least one team.");
-    if (gameState.round !== 1 || !gameState.round1Ended) {
+    if (!gameState.round1Ended) {
       return showNotice("End Round 1 before assigning teams to Round 2.");
     }
     const assignments = ids.map(id => {
@@ -2038,7 +2040,8 @@ function renderRound2Host() {
   }
 
 
-  show(hostPanel);
+  // The host controls navigation manually. Do not force the Round 2 pane open
+  // just because Round 2 has been assigned or initialized.
 
 
   hide(
@@ -6289,20 +6292,7 @@ function updateEverything() {
        When Round 2 begins, show only Round 2.
        ----------------------------------------------------- */
 
-    if (
-      gameState.round === 2 &&
-      gameState.qualifiedTeamIds?.length
-    ) {
-
-      show(
-        $("hostRound2Panel")
-      );
-
-      hide(
-        $("round1QualificationPane")
-      );
-
-    }
+    // Keep host navigation manual; changing game round must not switch tabs.
 
 
     /* -----------------------------------------------------
