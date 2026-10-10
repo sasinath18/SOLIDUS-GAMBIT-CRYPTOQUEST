@@ -6278,26 +6278,9 @@ function updateEverything() {
     renderFinalHost();
 
 
-    /* -----------------------------------------------------
-       ROUND 1 SELECTION PANE
-
-       Only visible after host ends Round 1.
-       ----------------------------------------------------- */
-
-    const qualificationPane =
-      $("round1QualificationPane");
-
-
-    if (
-      gameState.round === 1 &&
-      gameState.round1Ended
-    ) {
-
-      show(
-        qualificationPane
-      );
-
-    }
+    /* Legacy qualification pane is disabled.
+       Round assignment is handled by the host waiting-list panel. */
+    hide($("round1QualificationPane"));
 
 
     /* -----------------------------------------------------
