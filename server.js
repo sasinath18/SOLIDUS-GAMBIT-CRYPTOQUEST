@@ -790,10 +790,17 @@ function handleMessage(ws, d) {
                 });
             }
 
+            if (state.round === 1 && team.assignedRound !== 1) {
+                return send(ws, {
+                    type: "error",
+                    message: "Your team is waiting for the host to assign Round 1."
+                });
+            }
+
             // Only qualified teams can bid in Round 2
             if (
                 state.round === 2 &&
-                !team.qualified
+                (!team.qualified || team.assignedRound !== 2)
             ) {
                 return send(ws, {
                     type: "error",
