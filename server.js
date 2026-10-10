@@ -610,10 +610,6 @@ function handleMessage(ws, d) {
            ================================================ */
         case "assign-teams-round2": {
             if (!validHost(ws)) return;
-            if (state.round !== 1 || !state.round1Ended) {
-                return send(ws, { type: "error", message: "End Round 1 before assigning teams to Round 2." });
-            }
-
             const entries = Array.isArray(d.assignments) ? d.assignments : [];
             const clean = [];
             const seen = new Set();
