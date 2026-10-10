@@ -185,8 +185,10 @@ function createTeam(name) {
         id,
         name,
 
-        // Initial points
-        points: 100,
+        // Host must assign a round before the team can play.
+        points: 0,
+        assignedRound: null,
+        assignmentStatus: "waiting",
 
         // Current question bid
         currentBid: 0,
@@ -579,6 +581,97 @@ function handleMessage(ws, d) {
             break;
         }
                 /* ================================================
+           HOST TEAM ASSIGNMENT — ROUND 1
+           ================================================ */
+        case "assign-teams-round1": {
+            if (!validHost(ws)) return;
+            if (state.round === 2 || state.round === 3 || state.round1Ended) {
+                return send(ws, { type: "error", message: "Round 1 assignment is closed." });
+            }
+            const ids = Array.isArray(d.selectedTeamIds)
+                ? [...new Set(d.selectedTeamIds)].filter(id => teams[id])
+                : [];
+            if (!ids.length) {
+                return send(ws, { type: "error", message: "Select at least one team." });
+            }
+            ids.forEach(id => {
+                const team = teams[id];
+                team.assignedRound = 1;
+                team.assignmentStatus = "assigned";
+                team.qualified = false;
+                team.points = 100;
+            });
+            broadcastState();
+            break;
+        }
+
+        /* ================================================
+           HOST TEAM ASSIGNMENT — ROUND 2
+           ================================================ */
+        case "assign-teams-round2": {
+            if (!validHost(ws)) return;
+            if (state.round !== 1 || !state.round1Ended) {
+                return send(ws, { type: "error", message: "End Round 1 before assigning teams to Round 2." });
+            }
+
+            const entries = Array.isArray(d.assignments) ? d.assignments : [];
+            const clean = [];
+            const seen = new Set();
+            for (const entry of entries) {
+                const id = String(entry?.teamId || "");
+                const points = Number(entry?.points);
+                if (!teams[id] || seen.has(id)) continue;
+                if (!Number.isSafeInteger(points) || points < 0 || points > 1000000) {
+                    return send(ws, { type: "error", message: "Enter a valid non-negative point value for every selected team." });
+                }
+                seen.add(id);
+                clean.push({ id, points });
+            }
+            if (!clean.length) {
+                return send(ws, { type: "error", message: "Select teams and enter their Round 2 points." });
+            }
+
+            Object.values(teams).forEach(team => {
+                team.qualified = false;
+                if (team.assignedRound === 2) {
+                    team.assignmentStatus = "waiting";
+                    team.assignedRound = null;
+                }
+            });
+            clean.forEach(({ id, points }) => {
+                const team = teams[id];
+                team.assignedRound = 2;
+                team.assignmentStatus = "assigned";
+                team.qualified = true;
+                team.points = points;
+                team.currentBid = 0;
+                team.currentBidTime = 0;
+                team.currentBidOrder = 0;
+                team.currentEvaluation = "pending";
+            });
+
+            state.qualifiedTeamIds = clean.map(entry => entry.id);
+            state.round2QualifiedCount = clean.length;
+            state.round = 2;
+            state.status = "idle";
+            state.content = "";
+            state.image = "";
+            state.images = [];
+            state.winnerId = null;
+            state.winnerName = null;
+            state.winnerBid = 0;
+            state.round2ImageNumber = 0;
+            state.round2TotalImages = 6;
+            state.finalWinnerId = null;
+            state.finalWinnerName = null;
+            state.finalWinnerConfirmed = false;
+            state.bidId = Number(state.bidId || 0) + 1;
+            clearBids();
+            broadcastState();
+            break;
+        }
+
+        /* ================================================
            ROUND 1 — START
            ================================================ */
 
@@ -1104,119 +1197,11 @@ function handleMessage(ws, d) {
            ================================================ */
 
         case "qualify-round2": {
-
-            if (!validHost(ws)) {
-                return;
-            }
-
-            if (
-                !state.round1Ended ||
-                state.round !== 1
-            ) {
-                return send(ws, {
-                    type: "error",
-                    message:
-                        "End Round 1 before selecting Round 2 teams."
-                });
-            }
-
-            const ids =
-                Array.isArray(
-                    d.selectedTeamIds
-                )
-                    ? [
-                        ...new Set(
-                            d.selectedTeamIds
-                        )
-                    ].filter(
-                        id => teams[id]
-                    )
-                    : [];
-
-            if (!ids.length) {
-                return send(ws, {
-                    type: "error",
-                    message:
-                        "Select at least one team."
-                });
-            }
-
-            /*
-             * IMPORTANT:
-             * Client cannot decide the bonus.
-             * Server always adds exactly 100.
-             */
-            const ROUND2_BONUS = 100;
-
-
-            /* ============================================
-               RESET QUALIFICATION STATUS
-               ============================================ */
-
-            Object.values(teams)
-                .forEach(team => {
-                    team.qualified = false;
-                });
-
-
-            /* ============================================
-               MARK SELECTED TEAMS
-               +100 FOR EACH SELECTED TEAM
-               ============================================ */
-
-            ids.forEach(id => {
-
-                teams[id].qualified = true;
-
-                teams[id].points +=
-                    ROUND2_BONUS;
+            if (!validHost(ws)) return;
+            return send(ws, {
+                type: "error",
+                message: "Use the host team assignment panel to set Round 2 teams and points."
             });
-
-
-            /* ============================================
-               MOVE GAME TO ROUND 2
-               ============================================ */
-
-            state.qualifiedTeamIds =
-                ids;
-
-            state.round2QualifiedCount =
-                ids.length;
-
-            state.round = 2;
-
-            state.status = "idle";
-
-            state.content = "";
-
-            state.image = "";
-
-            state.images = [];
-
-            state.winnerId = null;
-
-            state.winnerName = null;
-
-            state.winnerBid = 0;
-
-            state.round2ImageNumber = 0;
-
-            state.round2TotalImages = 6;
-
-            state.finalWinnerId = null;
-
-            state.finalWinnerName = null;
-
-            state.finalWinnerConfirmed = false;
-
-            state.bidId =
-                Number(state.bidId || 0) + 1;
-
-            clearBids();
-
-            broadcastState();
-
-            break;
         }
                 /* ================================================
            ROUND 2 — START IMAGE
