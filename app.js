@@ -1849,9 +1849,6 @@ function renderHostTeamAssignments() {
   $("assignSelectedRound2")?.addEventListener("click", () => {
     const ids = selectedIds();
     if (!ids.length) return showNotice("Select at least one team.");
-    if (!gameState.round1Ended) {
-      return showNotice("End Round 1 before assigning teams to Round 2.");
-    }
     const assignments = ids.map(id => {
       const input = [...panel.querySelectorAll(".host-round2-points")].find(el => el.dataset.teamId === id);
       return { teamId: id, points: input ? input.value : "" };
